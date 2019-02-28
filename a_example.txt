@@ -1,5 +1,5 @@
 4
-H 3 cat beach sun
+H 3 cat beach selfie smile
 V 2 selfie smile toto titi
 V 2 garden selfie
 H 2 garden cat

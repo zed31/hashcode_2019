@@ -7,6 +7,7 @@ class PhotoModel:
         self.type = typeOfPhoto
         self.tags = tags
         self.index = idx
+        self.exclude_tags = []
 
     def get_tag_model(self):
         return self.tags
@@ -26,23 +27,48 @@ class PhotoModel:
             if element['occurrences'] == 0:
                 score += 1
         return score
+    
+    def get_common_tags(self, tags):
+        tags_and_occurrences = self.get_number_of_common_tags(tags)
+        l = []
+        for tag in tags_and_occurrences:
+            if tag['occurrences'] >= 1:
+                l.append(tag['tagName'])
+        return l
+    
+    def get_exclude_tags(self, tags):
+        tags_and_occurrences = self.get_number_of_common_tags(tags)
+        l = []
+        for tag in tags_and_occurrences:
+            if tag['occurrences'] == 0:
+                l.append(tag['tagName'])
+        return l
 
     def get_score(self, photo) -> int:
         common_tags = self._get_score_for_common_tags(self.get_number_of_common_tags(photo.get_tag_model()))
         exclude_tags = self._get_score_for_excluded_tags(self.get_number_of_common_tags(photo.get_tag_model()))
         exclude_tags_photo = photo._get_score_for_excluded_tags(photo.get_number_of_common_tags(self.tags))
-        return min(common_tags, exclude_tags, exclude_tags_photo)
+        return (min(common_tags, exclude_tags, exclude_tags_photo), self.get_common_tags(photo.get_tag_model()), self.get_exclude_tags(photo.get_tag_model()))
 
 class PhotoListModel:
     def __init__(self, photos):
         self.photos = photos
+        self.exclude_tags = []
+    
+    def dump_list(self):
+        for element in self.photos:
+            print(element.index, element.type, element.tags)
     
     def _get_first_picture_of(self, t):
-        try:
-            pic = next(x for x in self.photos if x.type == t)
-            self.photos.remove(pic)
-        except:
-            return None
+        idx = -1
+        i = 0
+        for element in self.photos:
+            if element.type == t:
+                idx = i
+                pic = element
+                break
+            idx += 1
+        self.photos.pop(idx)
         return pic
 
     def get_first_horizontal_picture(self):
@@ -56,25 +82,35 @@ class PhotoListModel:
         current_score = 0
         i = 0
         for element in self.photos:
-            score = element.get_score(photo)
-            if score > current_score:
+            score = photo.get_score(element)
+            if score[0] > current_score:
                 idx = i
-                current_score = score
+                current_score = score[0]
+                if element.type == 'V':
+                    element.exclude_tags = score[2]
             i += 1
-        return None if idx == -1 else self.photos[idx]
+        if idx > -1:
+            pic = self.photos[idx]
+            self.photos.pop(idx)
+        return None if idx == -1 else pic
     
-    def get_picture_with_least_score_vertical(self, photo):
+    def get_picture_vertical(self, to_exclude):
         idx = -1
-        current_score = -1
         i = 0
         for element in self.photos:
             if element.type == 'V':
-                score = element.get_score(photo)
-                if score < current_score or current_score == -1:
-                    current_score = score
+                has_tag = False
+                for tag in to_exclude:
+                    if element.tags.count(tag) > 0:
+                        has_tag = True
+                if not has_tag:
                     idx = i
+                    break
             i += 1
-        return None if idx == -1 else self.photos[idx]
+        if idx > -1:
+            pic = self.photos[idx]
+            self.photos.pop(idx)
+        return None if idx == -1 else pic
 
 class SlideModel:
     def __init__(self, photos):
