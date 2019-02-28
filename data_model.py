@@ -68,7 +68,6 @@ class PhotoListModel:
                 pic = element
                 break
             idx += 1
-        self.photos.pop(idx)
         return pic
 
     def get_first_horizontal_picture(self):
@@ -83,7 +82,7 @@ class PhotoListModel:
         i = 0
         for element in self.photos:
             score = photo.get_score(element)
-            if score[0] > current_score:
+            if score[0] >= current_score:
                 idx = i
                 current_score = score[0]
                 if element.type == 'V':
@@ -91,7 +90,6 @@ class PhotoListModel:
             i += 1
         if idx > -1:
             pic = self.photos[idx]
-            self.photos.pop(idx)
         return None if idx == -1 else pic
     
     def get_picture_vertical(self, to_exclude):
@@ -109,7 +107,6 @@ class PhotoListModel:
             i += 1
         if idx > -1:
             pic = self.photos[idx]
-            self.photos.pop(idx)
         return None if idx == -1 else pic
 
 class SlideModel:

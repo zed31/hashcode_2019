@@ -12,10 +12,31 @@ if __name__ == "__main__":
 			print_credits()
 		else:
 			photos = data_model.PhotoListModel(data_model.Parser(sys.argv[1]).get_photos())
-			p = photos.get_first_horizontal_picture()
-			print('REF:', p.index, p.type, p.tags)
-			p2 = photos.get_picture_with_most_score(photo=p)
-			print('REF:', p2.index, p2.type, p2.tags, p2.exclude_tags)
-			if p2.type == 'V':
-				p3 = photos.get_picture_vertical(p2.exclude_tags)
-				print('REF:', p3.index, p3.type, p3.tags, p3.exclude_tags)
+			#	print('REF:', p3.index, p3.type, p3.tags, p3.exclude_tags)
+			head = photos.get_first_horizontal_picture()
+			s = ''
+			head_removed = False
+			i = 0
+			while len(photos.photos):
+				print(len(photos.photos))
+				if not head_removed:
+					photos.photos.remove(head)
+					s += str(head.index) + '\n'
+					i += 1
+				p_max = photos.get_picture_with_most_score(photo=head)
+				if not p_max:
+					break
+				head = p_max
+				head_removed = False
+				if head.type == 'V':
+					photos.photos.remove(head)
+					p_vert_swag = photos.get_picture_vertical(to_exclude=head.exclude_tags)
+					if p_vert_swag:
+						s += str(head.index) + ' '
+						head = p_vert_swag
+					else:
+						head_removed = True
+			s = str(i) + '\n' + s.strip()
+			print(s)
+			with open('result.txt', 'w') as f:
+				f.write(s)
